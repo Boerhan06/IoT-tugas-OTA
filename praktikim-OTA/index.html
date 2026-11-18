@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Plant Monitoring Dashboard</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <!-- ======= NAVBAR ======= -->
+    <nav class="navbar">
+        <div class="navbar-brand">🌿 Plant<span>Monitor</span></div>
+        <div class="navbar-status">
+            <div id="statusBadge" class="badge connecting">Menghubungkan...</div>
+        </div>
+    </nav>
+
+    <!-- ======= HERO BANNER ======= -->
+    <div class="hero">
+        <div class="hero-text">
+            <h1>Real-Time<br><span>Plant</span> Monitoring!</h1>
+            <p>Pantau kualitas udara & lingkungan tanaman secara langsung</p>
+            <div class="hero-badge">🟢 Live via MQTT Broker</div>
+        </div>
+
+        <div class="hero-icons">
+            <div class="hero-icon-card">
+                <div class="icon">🌡️</div>
+                <div class="info">
+                    <span class="label">Temperature</span>
+                    <span class="val"><span id="heroSuhu">--</span> °C</span>
+                </div>
+            </div>
+            <div class="hero-icon-card">
+                <div class="icon">💧</div>
+                <div class="info">
+                    <span class="label">Humidity</span>
+                    <span class="val"><span id="heroKelembapan">--</span> % RH</span>
+                </div>
+            </div>
+            <div class="hero-icon-card">
+                <div class="icon">💨</div>
+                <div class="info">
+                    <span class="label">Gas MQ-2</span>
+                    <span class="val"><span id="heroMq2">--</span> ADC</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ======= MAIN CONTENT ======= -->
+    <div class="container">
+
+        <!-- SENSOR CARDS -->
+        <div class="section-header">
+            <h2>Data Sensor</h2>
+            <p>Data lingkungan yang diterima secara real-time dari ESP32</p>
+        </div>
+
+        <div class="sensor-grid">
+
+            <!-- SUHU -->
+            <div class="sensor-card">
+                <div class="sensor-icon icon-red">🌡️</div>
+                <div class="sensor-name">Temperature</div>
+                <div class="sensor-value"><span id="suhu">--</span></div>
+                <div class="sensor-unit">Derajat Celsius (°C)</div>
+                <hr class="sensor-divider">
+                <div class="sensor-description">Suhu lingkungan tanaman</div>
+            </div>
+
+            <!-- KELEMBAPAN -->
+            <div class="sensor-card">
+                <div class="sensor-icon icon-blue">💧</div>
+                <div class="sensor-name">Humidity</div>
+                <div class="sensor-value"><span id="kelembapan">--</span></div>
+                <div class="sensor-unit">Relative Humidity (% RH)</div>
+                <hr class="sensor-divider">
+                <div class="sensor-description">Kelembapan udara lingkungan</div>
+            </div>
+
+            <!-- MQ2 -->
+            <div class="sensor-card">
+                <div class="sensor-icon icon-orange">💨</div>
+                <div class="sensor-name">Gas Sensor MQ-2</div>
+                <div class="sensor-value"><span id="mq2">--</span></div>
+                <div class="sensor-unit">ADC Value</div>
+                <div id="mq2Status" class="gas-status">Menunggu data sensor...</div>
+            </div>
+
+        </div>
+
+        <!-- INFO STRIP -->
+        <div class="info-strip">
+            <div class="info-strip-item">
+                <span class="info-label">Pembaruan Terakhir</span>
+                <span class="info-value" id="lastUpdate">Belum ada data</span>
+            </div>
+            <div class="info-strip-item">
+                <span class="info-label">Total Data Diterima</span>
+                <span class="info-value" id="totalData">0</span>
+            </div>
+            <div class="info-strip-item">
+                <span class="info-label">Status Sensor</span>
+                <span class="info-value" id="sensorStatus">Menunggu data...</span>
+            </div>
+        </div>
+
+        <!-- HISTORY TABLE -->
+        <div class="history-section">
+            <div class="history-header">
+                <div class="section-header" style="margin-bottom:0">
+                    <h2>Riwayat Data Sensor</h2>
+                    <p>Data sensor yang diterima dari MQTT Broker (maks. 20 data)</p>
+                </div>
+            </div>
+
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>No</th>
+                            <th>Waktu</th>
+                            <th>Suhu (°C)</th>
+                            <th>Kelembapan (%)</th>
+                            <th>MQ-2 (ADC)</th>
+                            <th>Status Gas</th>
+                        </tr>
+                    </thead>
+                    <tbody id="historyTable">
+                        <tr>
+                            <td colspan="6" class="empty">Belum ada data sensor</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- ======= FOOTER ======= -->
+    <footer class="site-footer">
+        <strong>Plant Monitoring System</strong> &mdash; Praktikum IoT OTA &copy; 2026
+    </footer>
+
+    <!-- MQTT LIBRARY -->
+    <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+
+    <!-- MAIN SCRIPT -->
+    <script src="script.js"></script>
+
+    <!-- SYNC HERO VALUES -->
+    <script>
+        // Sync hero card values setiap kali data berubah
+        const _orig = window.tambahRiwayat;
+        const heroSuhu = document.getElementById('heroSuhu');
+        const heroKelembapan = document.getElementById('heroKelembapan');
+        const heroMq2 = document.getElementById('heroMq2');
+
+        const suhuObs = document.getElementById('suhu');
+        const kelObs  = document.getElementById('kelembapan');
+        const mq2Obs  = document.getElementById('mq2');
+
+        const obs = new MutationObserver(() => {
+            heroSuhu.textContent = suhuObs.textContent;
+            heroKelembapan.textContent = kelObs.textContent;
+            heroMq2.textContent = mq2Obs.textContent;
+        });
+
+        [suhuObs, kelObs, mq2Obs].forEach(el =>
+            obs.observe(el, { childList: true, characterData: true, subtree: true })
+        );
+    </script>
+
+</body>
+</html>
